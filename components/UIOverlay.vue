@@ -37,7 +37,7 @@ const failed = (score: Score | null) => score && (score.total < 50 || score.posi
     </div>
 
     <!-- Top-right HUD for round/clicks info -->
-    <div v-if="gameState === GameState.Playback || gameState === GameState.PlayerTurn" class="absolute top-5 right-5 bg-gray-800 bg-opacity-70 backdrop-blur-sm p-4 rounded-xl shadow-lg pointer-events-auto flex items-center space-x-4">
+    <div v-if="gameState === GameState.Playback || gameState === GameState.PlayerTurn" class="absolute top-5 right-5 bg-gray-800 bg-opacity-70 backdrop-blur-sm p-4 rounded-xl shadow-lg flex items-center space-x-4">
       <div>
         <div class="text-xs font-bold uppercase tracking-wider text-emerald-400">Round</div>
         <div class="text-3xl font-bold text-white">{{ round }}</div>
