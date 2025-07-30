@@ -1,0 +1,6 @@
+{
+  "name": "Memorhythm",
+  "description": "A web-based game inspired by Simon Says and Osu!, designed to test memory and rhythm. Players watch a musical sequence of colored circles and must replicate it by clicking in the correct positions with the right timing.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
