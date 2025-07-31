@@ -62,22 +62,52 @@ const failed = (score: Score | null) => score && (score.total < 50 || score.posi
           <!-- Game Rules Section -->
           <div class="bg-gray-800 bg-opacity-80 p-6 rounded-2xl shadow-2xl mb-8 max-w-lg mx-auto backdrop-blur-sm">
             <h2 class="text-2xl font-bold text-emerald-400 mb-4">How to Play</h2>
-            <div class="text-left space-y-3 text-gray-300">
-              <div class="flex items-start space-x-3">
-                <span class="text-emerald-400 font-bold">•</span>
-                <span>Individual scores (<strong class="text-white">position accuracy</strong> and <strong class="text-white">rhythm accuracy</strong>) need to be at least <strong class="text-emerald-400">30%</strong></span>
+            
+            <!-- Game Flow -->
+            <div class="mb-6 p-4 bg-gray-700 bg-opacity-50 rounded-xl">
+              <p class="text-gray-300 text-sm leading-relaxed">
+                Watch a sequence of colored circles appear with musical tones, then <strong class="text-white">click the same locations in the same rhythm</strong>. Each circle's position creates a unique pitch - memorize both the <strong class="text-emerald-400">visual pattern</strong> and <strong class="text-emerald-400">musical timing</strong>.
+              </p>
+            </div>
+            
+            <!-- Success Criteria -->
+            <div class="mb-6 text-left">
+              <h3 class="text-lg font-semibold text-emerald-300 mb-3">✓ Complete a Level</h3>
+              <div class="space-y-2 text-gray-300 text-sm pl-2">
+                <div class="flex items-center space-x-3">
+                  <span class="text-emerald-400 font-bold">•</span>
+                  <span><strong class="text-white">Position accuracy</strong> ≥ <strong class="text-emerald-400">30%</strong></span>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <span class="text-emerald-400 font-bold">•</span>
+                  <span><strong class="text-white">Rhythm accuracy</strong> ≥ <strong class="text-emerald-400">30%</strong></span>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <span class="text-emerald-400 font-bold">•</span>
+                  <span><strong class="text-white">Total score</strong> ≥ <strong class="text-emerald-400">50%</strong></span>
+                </div>
               </div>
-              <div class="flex items-start space-x-3">
-                <span class="text-emerald-400 font-bold">•</span>
-                <span>Combined <strong class="text-white">total score</strong> needs to be at least <strong class="text-emerald-400">50%</strong> to complete the level</span>
+            </div>
+
+            <!-- Failure -->
+            <div class="mb-6 text-left">
+              <h3 class="text-lg font-semibold text-red-300 mb-3">✗ Failure</h3>
+              <div class="text-gray-300 text-sm pl-2">
+                <div class="flex items-center space-x-3">
+                  <span class="text-red-400 font-bold">•</span>
+                  <span>Fail any requirement → <strong class="text-white">restart from Round 1</strong></span>
+                </div>
               </div>
-              <div class="flex items-start space-x-3">
-                <span class="text-emerald-400 font-bold">•</span>
-                <span>Each level increases difficulty by <strong class="text-white">one additional sound</strong></span>
-              </div>
-              <div class="flex items-start space-x-3">
-                <span class="text-emerald-400 font-bold">•</span>
-                <span>If you fail a level, you will be <strong class="text-white">reset to level 1</strong></span>
+            </div>
+
+            <!-- Progression -->
+            <div class="text-left">
+              <h3 class="text-lg font-semibold text-blue-300 mb-3">📈 Progression</h3>
+              <div class="text-gray-300 text-sm pl-2">
+                <div class="flex items-center space-x-3">
+                  <span class="text-blue-400 font-bold">•</span>
+                  <span>Each round adds <strong class="text-white">one more sound</strong></span>
+                </div>
               </div>
             </div>
           </div>
