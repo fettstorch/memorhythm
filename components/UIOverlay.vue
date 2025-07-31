@@ -58,6 +58,30 @@ const failed = (score: Score | null) => score && (score.total < 50 || score.posi
         <div v-if="gameState === GameState.Idle" class="text-center">
           <h1 class="text-6xl font-bold mb-4 text-white drop-shadow-lg">Memorhythm</h1>
           <p class="text-xl text-gray-300 mb-8">Test your memory and sense of rhythm.</p>
+          
+          <!-- Game Rules Section -->
+          <div class="bg-gray-800 bg-opacity-80 p-6 rounded-2xl shadow-2xl mb-8 max-w-lg mx-auto backdrop-blur-sm">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4">How to Play</h2>
+            <div class="text-left space-y-3 text-gray-300">
+              <div class="flex items-start space-x-3">
+                <span class="text-emerald-400 font-bold">•</span>
+                <span>Individual scores (<strong class="text-white">position accuracy</strong> and <strong class="text-white">rhythm accuracy</strong>) need to be at least <strong class="text-emerald-400">30%</strong></span>
+              </div>
+              <div class="flex items-start space-x-3">
+                <span class="text-emerald-400 font-bold">•</span>
+                <span>Combined <strong class="text-white">total score</strong> needs to be at least <strong class="text-emerald-400">50%</strong> to complete the level</span>
+              </div>
+              <div class="flex items-start space-x-3">
+                <span class="text-emerald-400 font-bold">•</span>
+                <span>Each level increases difficulty by <strong class="text-white">one additional sound</strong></span>
+              </div>
+              <div class="flex items-start space-x-3">
+                <span class="text-emerald-400 font-bold">•</span>
+                <span>If you fail a level, you will be <strong class="text-white">reset to level 1</strong></span>
+              </div>
+            </div>
+          </div>
+          
           <button @click="emit('start')" class="bg-emerald-500 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg hover:bg-emerald-600 transition-transform transform hover:scale-105">Start Game</button>
         </div>
         <div v-else-if="gameState === GameState.Playback" class="text-center">
