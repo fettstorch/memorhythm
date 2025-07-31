@@ -46,6 +46,14 @@ const startNewRound = (targetRound: number) => {
   activePlaybackIndex.value = null;
   const newSequence = generateSequence(sequenceLength, dimensions.value.width, dimensions.value.height);
   sequence.value = newSequence;
+  
+  // DEBUG: Log the sequence details
+  console.debug(`🎮 DEBUG: Starting Round ${targetRound} with ${sequenceLength} circles:`);
+  console.debug('📍 Sequence coordinates and timing:');
+  newSequence.forEach((circle, index) => {
+    console.debug(`  Circle ${index + 1}: x=${Math.round(circle.x)}, y=${Math.round(circle.y)}, time=${circle.time}ms, color=${circle.color}, freq=${Math.round(circle.frequency)}Hz`);
+  });
+  
   gameState.value = GameState.Playback;
 };
 
@@ -106,6 +114,7 @@ watch([gameState, sequence], () => {
     if (isCancelled) return;
 
     if (index >= sequence.value.length) {
+      console.debug('🎵 DEBUG: Playback complete - switching to PlayerTurn');
       gameState.value = GameState.PlayerTurn;
       activePlaybackIndex.value = null;
       return;
@@ -114,6 +123,8 @@ watch([gameState, sequence], () => {
     const circle = sequence.value[index];
     activePlaybackIndex.value = index;
     playTone(circle.frequency, ANIMATION_DURATION_MS / 1000);
+    
+    console.debug(`🎵 DEBUG: Playing circle ${index + 1}: x=${Math.round(circle.x)}, y=${Math.round(circle.y)} at ${circle.time}ms`);
 
     const delay = index < sequence.value.length - 1 ? sequence.value[index + 1].time - circle.time : ANIMATION_DURATION_MS * 1.5;
     timeoutId = window.setTimeout(() => playNextInSequence(index + 1), delay);
@@ -158,6 +169,15 @@ const handleInteractionEnd = ({ x, y }: { x: number; y: number }) => {
     const newClicks = [...playerClicks.value];
     newClicks[lastClickIndex] = { ...newClicks[lastClickIndex], x, y };
     playerClicks.value = newClicks;
+    
+    // DEBUG: Log player click details
+    const click = newClicks[lastClickIndex];
+    const targetCircle = sequence.value[lastClickIndex];
+    const distance = Math.hypot(click.x - targetCircle.x, click.y - targetCircle.y);
+    console.debug(`👆 DEBUG: Player click ${lastClickIndex + 1}:`);
+    console.debug(`  Clicked: x=${Math.round(click.x)}, y=${Math.round(click.y)}, time=${click.time}ms`);
+    console.debug(`  Target:  x=${Math.round(targetCircle.x)}, y=${Math.round(targetCircle.y)}, time=${targetCircle.time}ms`);
+    console.debug(`  Distance: ${Math.round(distance)}px, Time diff: ${click.time - targetCircle.time}ms`);
   }
 };
 
@@ -187,6 +207,14 @@ watch(gameState, (newGameState) => {
   } else if (newGameState === GameState.Scoring) {
     const calculatedScore = calculateScore(sequence.value, playerClicks.value, MAX_POSITION_ERROR_PX, MAX_RHYTHM_ERROR_MS);
     score.value = calculatedScore;
+    
+    // DEBUG: Log final scores
+    console.debug(`📊 DEBUG: Round ${round.value} Results:`);
+    console.debug(`  Position Score: ${calculatedScore.position}% (min: 30%)`);
+    console.debug(`  Rhythm Score: ${calculatedScore.rhythm}% (min: 30%)`);
+    console.debug(`  Total Score: ${calculatedScore.total}% (min: 50%)`);
+    console.debug(`  Max Position Error: ${MAX_POSITION_ERROR_PX}px`);
+    console.debug(`  Max Rhythm Error: ${MAX_RHYTHM_ERROR_MS}ms`);
     
     // Update best scores
     if (calculatedScore.position > bestScores.value.position) {
