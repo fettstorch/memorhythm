@@ -17,6 +17,7 @@
     "@types/node": "^22.14.0",
     "@vitejs/plugin-vue": "^5.1.0",
     "typescript": "~5.8.2",
+    "vercel": "^44.6.5",
     "vite": "^6.2.0",
     "vue-tsc": "^3.0.4"
   }
