@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:parallel": "playwright test --workers=6",
+    "test:e2e:shard": "playwright test --shard"
   },
   "dependencies": {
     "three": "0.166.1",
