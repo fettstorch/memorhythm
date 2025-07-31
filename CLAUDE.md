@@ -9,6 +9,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run type-check` - Run TypeScript type checking with vue-tsc
 - `npm run preview` - Preview production build locally
 
+## Permissions
+
+Claude is permitted to execute any npm script defined in package.json, except for deployment-related scripts. This includes development, build, test, lint, and type-checking commands.
+
 ## Project Architecture
 
 Memorhythm is a musical memory game built with Vue 3 + TypeScript + Three.js. The game challenges players to replicate sequences of musical notes both positionally and rhythmically.
