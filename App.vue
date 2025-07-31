@@ -33,6 +33,7 @@ const audioReady = ref<boolean>(false);
 const isMusicSetup = ref<boolean>(false);
 const isMuted = ref<boolean>(false);
 const dimensions = ref({ width: 0, height: 0 });
+const bestScores = ref({ position: 0, rhythm: 0, total: 0 });
 
 const handleCanvasReady = (newDimensions: { width: number; height: number }) => {
   dimensions.value = newDimensions;
@@ -186,6 +187,18 @@ watch(gameState, (newGameState) => {
   } else if (newGameState === GameState.Scoring) {
     const calculatedScore = calculateScore(sequence.value, playerClicks.value, MAX_POSITION_ERROR_PX, MAX_RHYTHM_ERROR_MS);
     score.value = calculatedScore;
+    
+    // Update best scores
+    if (calculatedScore.position > bestScores.value.position) {
+      bestScores.value.position = calculatedScore.position;
+    }
+    if (calculatedScore.rhythm > bestScores.value.rhythm) {
+      bestScores.value.rhythm = calculatedScore.rhythm;
+    }
+    if (calculatedScore.total > bestScores.value.total) {
+      bestScores.value.total = calculatedScore.total;
+    }
+    
     const failed = calculatedScore.total < 50 || calculatedScore.position < 30 || calculatedScore.rhythm < 30;
     if (failed) {
       playSoundEffect('level-failed');
@@ -216,6 +229,7 @@ const clicksRemaining = computed(() => {
       <UIOverlay
         :gameState="gameState"
         :score="score"
+        :bestScores="bestScores"
         :round="round"
         :clicksRemaining="clicksRemaining"
         :isMuted="isMuted"

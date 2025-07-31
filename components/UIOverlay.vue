@@ -4,6 +4,7 @@ import { GameState, Score } from '../types';
 interface UIOverlayProps {
   gameState: GameState;
   score: Score | null;
+  bestScores: { position: number; rhythm: number; total: number };
   round: number;
   clicksRemaining: number;
   isMuted: boolean;
@@ -79,17 +80,39 @@ const failed = (score: Score | null) => score && (score.total < 50 || score.posi
                         <span class="text-gray-300">Position Accuracy:</span>
                         <span class="font-bold" :class="score.position >= 30 ? 'text-emerald-400' : 'text-red-400'"> {{score.position}}%</span>
                         <span class="text-gray-400"> / 30%</span>
+                        <span v-if="score.position === bestScores.position && bestScores.position > 0" class="text-yellow-400 text-sm ml-2">✨ BEST!</span>
                     </div>
                     <div class="text-2xl">
                         <span class="text-gray-300">Rhythm Accuracy:</span>
                         <span class="font-bold" :class="score.rhythm >= 30 ? 'text-emerald-400' : 'text-red-400'"> {{score.rhythm}}%</span>
                         <span class="text-gray-400"> / 30%</span>
+                        <span v-if="score.rhythm === bestScores.rhythm && bestScores.rhythm > 0" class="text-yellow-400 text-sm ml-2">✨ BEST!</span>
                     </div>
                     <div class="border-t border-gray-600 my-4"></div>
                     <div class="text-3xl">
                         <span class="font-bold" :class="score.total >= 50 ? 'text-emerald-400' : 'text-red-400'">Total Score:</span>
                         <span class="font-bold" :class="score.total >= 50 ? 'text-emerald-400' : 'text-red-400'"> {{score.total}}%</span>
                         <span class="text-gray-400"> / 50%</span>
+                        <span v-if="score.total === bestScores.total && bestScores.total > 0" class="text-yellow-400 text-sm ml-2">✨ BEST!</span>
+                    </div>
+                    
+                    <!-- Session Best Scores -->
+                    <div v-if="bestScores.total > 0" class="border-t border-gray-600 mt-6 pt-4">
+                        <h3 class="text-lg font-bold text-emerald-400 mb-3">Session Best</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Position:</span>
+                                <span class="text-white font-semibold">{{bestScores.position}}%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Rhythm:</span>
+                                <span class="text-white font-semibold">{{bestScores.rhythm}}%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Total:</span>
+                                <span class="text-white font-semibold">{{bestScores.total}}%</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
