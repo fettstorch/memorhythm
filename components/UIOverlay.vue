@@ -169,10 +169,17 @@ onUnmounted(() => {
                 v-for="(entry, index) in leaderboardData.entries" 
                 :key="`${entry.user}-${entry.score}-${entry.round}`"
                 class="flex justify-between items-center bg-gray-700 bg-opacity-50 rounded-lg px-3 sm:px-4 py-2"
-                :class="{ 'border-l-4 border-yellow-400': index === 0 }"
+                :class="{ 
+                  'border-l-4 border-yellow-400': index === 0,
+                  'border-l-4 border-gray-300': index === 1,
+                  'border-l-4 border-amber-600': index === 2
+                }"
               >
                 <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                   <span class="font-bold text-emerald-400 text-sm sm:text-base">#{{ index + 1 }}</span>
+                  <span v-if="index === 0" class="text-lg">🥇</span>
+                  <span v-else-if="index === 1" class="text-lg">🥈</span>
+                  <span v-else-if="index === 2" class="text-lg">🥉</span>
                   <span class="text-white font-medium text-sm sm:text-base truncate">{{ entry.user }}</span>
                 </div>
                 <div class="text-right flex-shrink-0">

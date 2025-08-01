@@ -36,10 +36,10 @@ const isMusicSetup = ref<boolean>(false);
 const isMuted = ref<boolean>(false);
 const showInfoModal = ref<boolean>(false);
 const dimensions = ref({ width: 0, height: 0 });
-const bestScores = ref({ position: 0, rhythm: 0, total: 0 });
 
-// Player name management
+// Player name and score management
 const PLAYER_NAME_KEY = 'memorhythm-player-name';
+const USER_SCORES_KEY = 'memorhythm-user-scores';
 
 const generateDefaultName = () => `user-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -63,7 +63,44 @@ const savePlayerName = (name: string) => {
   }
 };
 
+// User score persistence
+interface UserBestScores {
+  position: number;
+  rhythm: number;
+  total: number;
+  round: number;
+}
+
+const loadUserScores = (): UserBestScores => {
+  try {
+    const saved = localStorage.getItem(USER_SCORES_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Validate the structure
+      if (typeof parsed === 'object' && 
+          typeof parsed.position === 'number' && 
+          typeof parsed.rhythm === 'number' && 
+          typeof parsed.total === 'number' && 
+          typeof parsed.round === 'number') {
+        return parsed;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to load user scores from localStorage:', error);
+  }
+  return { position: 0, rhythm: 0, total: 0, round: 0 };
+};
+
+const saveUserScores = (scores: UserBestScores) => {
+  try {
+    localStorage.setItem(USER_SCORES_KEY, JSON.stringify(scores));
+  } catch (error) {
+    console.warn('Failed to save user scores to localStorage:', error);
+  }
+};
+
 const playerName = ref(loadPlayerName());
+const bestScores = ref(loadUserScores());
 
 // Leaderboard data - cache all three types
 const leaderboardCache = ref<{
@@ -121,9 +158,66 @@ const switchLeaderboardTab = (category: 'total' | 'position' | 'rhythm') => {
   activeLeaderboardTab.value = category;
 };
 
-// Get current leaderboard data from cache
+// Merge local user scores with leaderboard data
+const mergeLocalUserScore = (leaderboardData: LeaderboardResponse | null, category: ScoreCategory): LeaderboardResponse | null => {
+  if (!leaderboardData || bestScores.value.total === 0) return leaderboardData;
+  
+  const currentUserName = playerName.value.trim();
+  const userScore = bestScores.value[category];
+  const userRound = bestScores.value.round;
+  
+  // Check if user is already in the leaderboard
+  const existingUserIndex = leaderboardData.entries.findIndex(entry => entry.user === currentUserName);
+  
+  // Create user entry
+  const userEntry: LeaderboardEntry = {
+    user: currentUserName,
+    score: userScore,
+    round: userRound
+  };
+  
+  let newEntries = [...leaderboardData.entries];
+  
+  if (existingUserIndex >= 0) {
+    // User exists in leaderboard - only replace if local score is better
+    const existingEntry = newEntries[existingUserIndex];
+    if (userScore > existingEntry.score || 
+        (userScore === existingEntry.score && userRound > existingEntry.round)) {
+      newEntries[existingUserIndex] = userEntry;
+    }
+  } else {
+    // User not in leaderboard - add them
+    newEntries.push(userEntry);
+  }
+  
+  // Sort by round (desc) first, then by score (desc) within each round
+  newEntries.sort((a, b) => {
+    if (b.round !== a.round) return b.round - a.round;
+    return b.score - a.score;
+  });
+  
+  // Ensure local user is always included, even if not in top 20
+  const localUserIndex = newEntries.findIndex(entry => entry.user === currentUserName);
+  let finalEntries = newEntries.slice(0, 20);
+  
+  // If local user is not in top 20 but exists in the full list, add them
+  if (localUserIndex >= 20) {
+    const localUserEntry = newEntries[localUserIndex];
+    finalEntries = [...finalEntries.slice(0, 19), localUserEntry]; // Replace 20th with local user
+  }
+  
+  newEntries = finalEntries;
+  
+  return {
+    category: leaderboardData.category,
+    entries: newEntries
+  };
+};
+
+// Get current leaderboard data from cache with local user integrated
 const currentLeaderboardData = computed(() => {
-  return leaderboardCache.value[activeLeaderboardTab.value];
+  const cachedData = leaderboardCache.value[activeLeaderboardTab.value];
+  return mergeLocalUserScore(cachedData, activeLeaderboardTab.value);
 });
 
 // Start periodic refresh of leaderboard data
@@ -360,15 +454,25 @@ watch(gameState, (newGameState) => {
     console.debug(`  Max Position Error: ${MAX_POSITION_ERROR_PX}px`);
     console.debug(`  Max Rhythm Error: ${MAX_RHYTHM_ERROR_MS}ms`);
     
-    // Update best scores
+    // Update best scores and save to localStorage
+    let scoresUpdated = false;
     if (calculatedScore.position > bestScores.value.position) {
       bestScores.value.position = calculatedScore.position;
+      scoresUpdated = true;
     }
     if (calculatedScore.rhythm > bestScores.value.rhythm) {
       bestScores.value.rhythm = calculatedScore.rhythm;
+      scoresUpdated = true;
     }
     if (calculatedScore.total > bestScores.value.total) {
       bestScores.value.total = calculatedScore.total;
+      bestScores.value.round = round.value;
+      scoresUpdated = true;
+    }
+    
+    // Save updated scores to localStorage
+    if (scoresUpdated) {
+      saveUserScores(bestScores.value);
     }
     
     const failed = calculatedScore.total < 50 || calculatedScore.position < 30 || calculatedScore.rhythm < 30;
