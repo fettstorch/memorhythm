@@ -271,28 +271,45 @@ watch(() => playerClicks.value.length, (newLength, oldLength) => {
     }
 });
 
-const handleMouseDown = (event: MouseEvent) => {
-  if (gameState.value !== GameState.PlayerTurn || !mountRef.value) return;
-  isMouseDownRef.value = true;
+const getEventCoordinates = (event: MouseEvent | TouchEvent) => {
+  if (!mountRef.value) return { x: 0, y: 0 };
   const rect = mountRef.value.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
+  
+  if ('touches' in event) {
+    const touch = event.touches[0] || event.changedTouches[0];
+    return {
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top
+    };
+  } else {
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    };
+  }
+};
+
+const handleStart = (event: MouseEvent | TouchEvent) => {
+  if (gameState.value !== GameState.PlayerTurn || !mountRef.value) return;
+  event.preventDefault();
+  isMouseDownRef.value = true;
+  const { x, y } = getEventCoordinates(event);
   lastDragPosition.value = { x, y };
   emit('playerInteractionStart', { x, y, time: performance.now() });
 };
 
-const handleMouseUpAndLeave = () => {
+const handleEnd = (event: MouseEvent | TouchEvent) => {
   if (isMouseDownRef.value) {
-      isMouseDownRef.value = false;
-      emit('playerInteractionEnd', lastDragPosition.value);
+    event.preventDefault();
+    isMouseDownRef.value = false;
+    emit('playerInteractionEnd', lastDragPosition.value);
   }
 };
 
-const handleMouseMove = (event: MouseEvent) => {
+const handleMove = (event: MouseEvent | TouchEvent) => {
   if (!isMouseDownRef.value || !mountRef.value) return;
-  const rect = mountRef.value.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
+  event.preventDefault();
+  const { x, y } = getEventCoordinates(event);
   lastDragPosition.value = { x, y };
 
   if (markerMeshes.value.length > 0) {
@@ -302,6 +319,14 @@ const handleMouseMove = (event: MouseEvent) => {
 
   emit('playerInteractionPitchChange', { y });
 };
+
+const handleMouseDown = (event: MouseEvent) => handleStart(event);
+const handleMouseUpAndLeave = (event: MouseEvent) => handleEnd(event);
+const handleMouseMove = (event: MouseEvent) => handleMove(event);
+
+const handleTouchStart = (event: TouchEvent) => handleStart(event);
+const handleTouchEnd = (event: TouchEvent) => handleEnd(event);
+const handleTouchMove = (event: TouchEvent) => handleMove(event);
 </script>
 
 <template>
@@ -311,6 +336,10 @@ const handleMouseMove = (event: MouseEvent) => {
     @mouseup="handleMouseUpAndLeave"
     @mouseleave="handleMouseUpAndLeave"
     @mousemove="handleMouseMove"
+    @touchstart="handleTouchStart"
+    @touchend="handleTouchEnd"
+    @touchmove="handleTouchMove"
     class="rounded-lg shadow-lg cursor-pointer w-full h-full"
+    style="touch-action: none;"
   />
 </template> 
