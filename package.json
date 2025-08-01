@@ -2,10 +2,10 @@
   "name": "memorhythm",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build:backend && vite build",
+    "build:backend": "cd backend && npm run build",
     "type-check": "vue-tsc --noEmit",
     "preview": "vite preview",
     "test:e2e": "playwright test",
@@ -15,6 +15,7 @@
     "test:e2e:shard": "playwright test --shard"
   },
   "dependencies": {
+    "@upstash/redis": "^1.35.3",
     "three": "0.166.1",
     "vue": "^3.4.31"
   },

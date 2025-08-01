@@ -11,8 +11,11 @@ interface UIOverlayProps {
   isMusicSetup: boolean;
 }
 
+// Check if we're in test mode to hide leaderboard button
+const isTestMode = new URLSearchParams(window.location.search).get('test') === 'true';
+
 defineProps<UIOverlayProps>();
-const emit = defineEmits(['start', 'nextRound', 'toggleMute']);
+const emit = defineEmits(['start', 'nextRound', 'toggleMute', 'showLeaderboard']);
 
 const VolumeUpIcon = () => (
   '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>'
@@ -58,7 +61,11 @@ const failed = (score: Score | null) => score && (score.total < 50 || score.posi
         <div v-if="gameState === GameState.Idle" class="text-center">
           <h1 class="text-6xl font-bold mb-4 text-white drop-shadow-lg">Memorhythm</h1>
           <p class="text-xl text-gray-300 mb-8">Test your memory and sense of rhythm.</p>
-          <button @click="emit('start')" class="bg-emerald-500 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg hover:bg-emerald-600 transition-transform transform hover:scale-105">Start Game</button>
+          <div class="space-y-4">
+            <button @click="emit('start')" class="bg-emerald-500 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg hover:bg-emerald-600 transition-transform transform hover:scale-105">Start Game</button>
+            <br>
+            <button v-if="!isTestMode" @click="emit('showLeaderboard')" class="bg-blue-500 text-white font-bold py-2 px-6 rounded-full text-lg shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105">View Leaderboard</button>
+          </div>
         </div>
         <div v-else-if="gameState === GameState.Playback" class="text-center">
           <h2 class="text-4xl font-bold text-white animate-pulse">Watch Carefully...</h2>

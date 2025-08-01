@@ -29,3 +29,9 @@ dist-ssr
 /playwright-report/
 /blob-report/
 /playwright/.auth/
+
+# Environment variables
+.env
+.env.local
+.env.production
+/api/

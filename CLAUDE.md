@@ -153,3 +153,7 @@ Before deployment, always run:
 - `npm run type-check` - Verify TypeScript compilation
 - `npm run build` - Ensure production build succeeds
 - Browser MCP testing using debug logs to verify gameplay functionality
+
+## Development Best Practices
+
+- execute nr type-check and nr build after changes to the code in order to verify that nothing broke

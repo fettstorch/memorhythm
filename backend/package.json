@@ -1,0 +1,19 @@
+{
+  "name": "memorhythm-backend",
+  "version": "1.0.0",
+  "description": "Backend API functions for Memorhythm game",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && node scripts/post-build.js",
+    "clean": "rm -rf ../api && rm -rf dist",
+    "dev": "tsc --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.35.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "typescript": "~5.8.2"
+  }
+}

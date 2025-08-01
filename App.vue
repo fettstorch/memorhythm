@@ -21,6 +21,8 @@ import {
 } from './constants';
 import GameCanvas from './components/GameCanvas.vue';
 import UIOverlay from './components/UIOverlay.vue';
+import PlayerNameInput from './src/components/PlayerNameInput.vue';
+import LeaderboardDisplay from './src/components/LeaderboardDisplay.vue';
 import { backgroundMusicBase64Encoded } from './sounds';
 
 const gameState = ref<GameState>(GameState.Idle);
@@ -34,6 +36,11 @@ const isMusicSetup = ref<boolean>(false);
 const isMuted = ref<boolean>(false);
 const dimensions = ref({ width: 0, height: 0 });
 const bestScores = ref({ position: 0, rhythm: 0, total: 0 });
+const showPlayerNameInput = ref(false);
+const showLeaderboard = ref(false);
+
+// Check if we're in test mode to disable leaderboard modals
+const isTestMode = new URLSearchParams(window.location.search).get('test') === 'true';
 
 const handleCanvasReady = (newDimensions: { width: number; height: number }) => {
   dimensions.value = newDimensions;
@@ -230,8 +237,16 @@ watch(gameState, (newGameState) => {
     const failed = calculatedScore.total < 50 || calculatedScore.position < 30 || calculatedScore.rhythm < 30;
     if (failed) {
       playSoundEffect('level-failed');
+      // Show name input for failed games too (they still completed rounds) - but not in test mode
+      if (!isTestMode) {
+        showPlayerNameInput.value = true;
+      }
     } else {
       playSoundEffect('level-complete');
+      // Show name input for successful rounds - but not in test mode
+      if (!isTestMode) {
+        showPlayerNameInput.value = true;
+      }
     }
   }
 });
@@ -239,6 +254,21 @@ watch(gameState, (newGameState) => {
 const clicksRemaining = computed(() => {
   return sequence.value.length - playerClicks.value.length;
 });
+
+const handlePlayerNameSubmitted = () => {
+  showPlayerNameInput.value = false;
+};
+
+const handleShowLeaderboard = () => {
+  // Don't show leaderboard in test mode
+  if (!isTestMode) {
+    showLeaderboard.value = true;
+  }
+};
+
+const handleHideLeaderboard = () => {
+  showLeaderboard.value = false;
+};
 </script>
 
 <template>
@@ -265,7 +295,22 @@ const clicksRemaining = computed(() => {
         @start="handleStartGame"
         @nextRound="handleNextRound"
         @toggleMute="handleToggleMute"
+        @showLeaderboard="handleShowLeaderboard"
       />
+      
+      <!-- Player Name Input Modal -->
+      <div v-if="showPlayerNameInput" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <PlayerNameInput 
+          :score="score!" 
+          :round="round"
+          @submitted="handlePlayerNameSubmitted"
+        />
+      </div>
+      
+      <!-- Leaderboard Modal -->
+      <div v-if="showLeaderboard" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <LeaderboardDisplay @close="handleHideLeaderboard" />
+      </div>
     </div>
   </div>
 </template>
