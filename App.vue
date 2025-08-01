@@ -39,8 +39,31 @@ const dimensions = ref({ width: 0, height: 0 });
 const bestScores = ref({ position: 0, rhythm: 0, total: 0 });
 
 // Player name management
+const PLAYER_NAME_KEY = 'memorhythm-player-name';
+
 const generateDefaultName = () => `user-${Math.floor(1000 + Math.random() * 9000)}`;
-const playerName = ref(generateDefaultName());
+
+const loadPlayerName = (): string => {
+  try {
+    const saved = localStorage.getItem(PLAYER_NAME_KEY);
+    return saved && saved.trim() ? saved.trim() : generateDefaultName();
+  } catch {
+    return generateDefaultName();
+  }
+};
+
+const savePlayerName = (name: string) => {
+  try {
+    const trimmedName = name.trim();
+    if (trimmedName) {
+      localStorage.setItem(PLAYER_NAME_KEY, trimmedName);
+    }
+  } catch (error) {
+    console.warn('Failed to save player name to localStorage:', error);
+  }
+};
+
+const playerName = ref(loadPlayerName());
 
 // Leaderboard data - cache all three types
 const leaderboardCache = ref<{
@@ -409,7 +432,7 @@ onUnmounted(() => {
         @nextRound="handleNextRound"
         @toggleMute="handleToggleMute"
         @toggleInfoModal="handleToggleInfoModal"
-        @updatePlayerName="(newName) => playerName = newName"
+        @updatePlayerName="(newName) => { playerName = newName; savePlayerName(newName); }"
         @switchLeaderboardTab="switchLeaderboardTab"
       />
     </div>
