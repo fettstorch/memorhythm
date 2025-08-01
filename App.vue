@@ -34,6 +34,7 @@ const activePlaybackIndex = ref<number | null>(null);
 const audioReady = ref<boolean>(false);
 const isMusicSetup = ref<boolean>(false);
 const isMuted = ref<boolean>(false);
+const showInfoModal = ref<boolean>(false);
 const dimensions = ref({ width: 0, height: 0 });
 const bestScores = ref({ position: 0, rhythm: 0, total: 0 });
 
@@ -212,6 +213,10 @@ const handleNextRound = () => {
 
 const handleToggleMute = () => {
   isMuted.value = !isMuted.value;
+};
+
+const handleToggleInfoModal = () => {
+  showInfoModal.value = !showInfoModal.value;
 };
 
 watch(isMuted, (muted) => {
@@ -395,6 +400,7 @@ onUnmounted(() => {
         :clicksRemaining="clicksRemaining"
         :isMuted="isMuted"
         :isMusicSetup="isMusicSetup"
+        :showInfoModal="showInfoModal"
         :playerName="playerName"
         :leaderboardData="currentLeaderboardData"
         :isLoadingLeaderboard="isLoadingLeaderboard"
@@ -402,6 +408,7 @@ onUnmounted(() => {
         @start="handleStartGame"
         @nextRound="handleNextRound"
         @toggleMute="handleToggleMute"
+        @toggleInfoModal="handleToggleInfoModal"
         @updatePlayerName="(newName) => playerName = newName"
         @switchLeaderboardTab="switchLeaderboardTab"
       />

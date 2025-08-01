@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue';
 import { GameState, Score, LeaderboardResponse } from '../types';
 
 interface UIOverlayProps {
@@ -9,6 +10,7 @@ interface UIOverlayProps {
   clicksRemaining: number;
   isMuted: boolean;
   isMusicSetup: boolean;
+  showInfoModal: boolean;
   playerName: string;
   leaderboardData: LeaderboardResponse | null;
   isLoadingLeaderboard: boolean;
@@ -18,8 +20,8 @@ interface UIOverlayProps {
 // Check if we're in test mode to hide leaderboard button
 const isTestMode = new URLSearchParams(window.location.search).get('test') === 'true';
 
-defineProps<UIOverlayProps>();
-const emit = defineEmits(['start', 'nextRound', 'toggleMute', 'updatePlayerName', 'switchLeaderboardTab']);
+const props = defineProps<UIOverlayProps>();
+const emit = defineEmits(['start', 'nextRound', 'toggleMute', 'toggleInfoModal', 'updatePlayerName', 'switchLeaderboardTab']);
 
 const VolumeUpIcon = () => (
   '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>'
@@ -29,7 +31,27 @@ const VolumeOffIcon = () => (
   '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd" /><path stroke-linecap="round" stroke-linejoin="round" d="M17 14l4-4m0 0l-4-4m4 4l-4 4" /></svg>'
 );
 
+const InfoIcon = () => (
+  '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+);
+
 const failed = (score: Score | null) => score && (score.total < 50 || score.position < 30 || score.rhythm < 30);
+
+// Handle keyboard events for modal
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && props.showInfoModal) {
+    emit('toggleInfoModal');
+  }
+};
+
+// Add keyboard event listeners
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown);
+});
 </script>
 
 <style scoped>
@@ -44,13 +66,22 @@ const failed = (score: Score | null) => score && (score.total < 50 || score.posi
 
 <template>
   <div class="absolute inset-0 pointer-events-none">
-    <!-- Top-left Mute button -->
-    <div v-if="isMusicSetup" class="absolute top-5 left-5 pointer-events-auto">
+    <!-- Top-left Controls -->
+    <div class="absolute top-5 left-5 pointer-events-auto flex space-x-3">
+      <!-- Mute button (only shown when music is setup) -->
       <button
+        v-if="isMusicSetup"
         @click="emit('toggleMute')"
         class="bg-gray-800 bg-opacity-70 backdrop-blur-sm p-3 rounded-full text-white shadow-lg hover:bg-gray-700 transition-colors"
         :aria-label="isMuted ? 'Unmute' : 'Mute'"
         v-html="isMuted ? VolumeOffIcon() : VolumeUpIcon()"
+      ></button>
+      <!-- Info button (always visible) -->
+      <button
+        @click="emit('toggleInfoModal')"
+        class="bg-gray-800 bg-opacity-70 backdrop-blur-sm p-3 rounded-full text-white shadow-lg hover:bg-gray-700 transition-colors"
+        aria-label="Game rules and information"
+        v-html="InfoIcon()"
       ></button>
     </div>
 
@@ -212,6 +243,79 @@ const failed = (score: Score | null) => score && (score.total < 50 || score.posi
             <button @click="emit('nextRound')" class="bg-emerald-500 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-lg sm:text-xl shadow-lg hover:bg-emerald-600 transition-transform transform hover:scale-105">
                 {{ failed(score) ? 'Restart from Round 1' : 'Next Round' }}
             </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div v-if="showInfoModal" class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center pointer-events-auto z-50 p-4" @click="emit('toggleInfoModal')">
+      <div class="bg-gray-800 bg-opacity-95 backdrop-blur-sm rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+        <!-- Modal Header -->
+        <div class="flex justify-between items-center p-6 border-b border-gray-600">
+          <h2 class="text-2xl font-bold text-emerald-400">How to Play Memorhythm</h2>
+          <button 
+            @click="emit('toggleInfoModal')"
+            class="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700"
+            aria-label="Close info modal"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="p-6 space-y-6">
+          <!-- Game Flow Section -->
+          <div>
+            <h3 class="text-xl font-semibold text-white mb-3">🎮 Game Flow</h3>
+            <div class="text-gray-300 space-y-2">
+              <p>1. <strong class="text-emerald-400">Watch Carefully:</strong> A sequence of colored circles will appear on the board, each playing a musical tone.</p>
+              <p>2. <strong class="text-emerald-400">Your Turn:</strong> Replicate the sequence by clicking the same locations in the same rhythm.</p>
+              <p>3. <strong class="text-emerald-400">Scoring:</strong> Your performance is evaluated on both position accuracy and rhythm timing.</p>
+            </div>
+          </div>
+
+          <!-- Scoring Requirements -->
+          <div>
+            <h3 class="text-xl font-semibold text-white mb-3">📊 Scoring Requirements</h3>
+            <div class="bg-gray-700 bg-opacity-50 rounded-lg p-4 space-y-3">
+              <div class="flex items-center space-x-3">
+                <div class="w-3 h-3 bg-blue-400 rounded-full"></div>
+                <span class="text-gray-300"><strong class="text-white">Position Accuracy:</strong> Must be ≥30% to pass</span>
+              </div>
+              <div class="flex items-center space-x-3">
+                <div class="w-3 h-3 bg-purple-400 rounded-full"></div>
+                <span class="text-gray-300"><strong class="text-white">Rhythm Accuracy:</strong> Must be ≥30% to pass</span>
+              </div>
+              <div class="flex items-center space-x-3">
+                <div class="w-3 h-3 bg-emerald-400 rounded-full"></div>
+                <span class="text-gray-300"><strong class="text-white">Total Score:</strong> Must be ≥50% to complete the level</span>
+              </div>
+            </div>
+            <p class="text-sm text-gray-400 mt-3">All three requirements must be met to advance to the next round!</p>
+          </div>
+
+          <!-- Tips Section -->
+          <div>
+            <h3 class="text-xl font-semibold text-white mb-3">💡 Tips for Success</h3>
+            <div class="text-gray-300 space-y-2">
+              <p>• <strong class="text-emerald-400">Memory:</strong> Focus on the visual pattern and spatial relationships between circles.</p>
+              <p>• <strong class="text-emerald-400">Rhythm:</strong> Listen to the musical timing and try to internalize the beat.</p>
+              <p>• <strong class="text-emerald-400">Audio Cues:</strong> The pitch changes with vertical position - higher circles have higher tones.</p>
+              <p>• <strong class="text-emerald-400">Practice:</strong> Each round adds one more circle to the sequence - start simple and build up!</p>
+            </div>
+          </div>
+
+          <!-- Close Button -->
+          <div class="flex justify-center pt-4">
+            <button 
+              @click="emit('toggleInfoModal')"
+              class="bg-emerald-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-emerald-600 transition-transform transform hover:scale-105"
+            >
+              Got it!
+            </button>
+          </div>
         </div>
       </div>
     </div>
