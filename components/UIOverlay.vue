@@ -155,7 +155,7 @@ onUnmounted(() => {
               </button>
             </div>
             
-            <div class="max-h-64 overflow-y-auto scrollbar-hide">
+            <div class="max-h-64 overflow-y-auto scrollbar-hide p-1">
               <div v-if="isLoadingLeaderboard" class="text-gray-400">
                 Loading leaderboard...
               </div>
@@ -164,7 +164,7 @@ onUnmounted(() => {
                 No scores yet - be the first!
               </div>
               
-              <div v-else class="space-y-2">
+              <div v-else class="space-y-2 p-1">
               <div 
                 v-for="(entry, index) in leaderboardData.entries" 
                 :key="`${entry.user}-${entry.score}-${entry.round}`"
@@ -172,7 +172,8 @@ onUnmounted(() => {
                 :class="{ 
                   'border-l-4 border-yellow-400': index === 0,
                   'border-l-4 border-gray-300': index === 1,
-                  'border-l-4 border-amber-600': index === 2
+                  'border-l-4 border-amber-600': index === 2,
+                  'bg-emerald-600 bg-opacity-30 ring-2 ring-emerald-400 ring-opacity-50': entry.user === playerName
                 }"
               >
                 <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
