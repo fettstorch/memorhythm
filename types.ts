@@ -38,11 +38,12 @@ export interface Animation {
 }
 
 // Leaderboard types
-export type ScoreCategory = 'position' | 'rhythm' | 'total' | 'round';
+export type ScoreCategory = 'position' | 'rhythm' | 'total';
 
 export interface LeaderboardEntry {
   user: string;
   score: number;
+  round: number;
   rank?: number;
 }
 

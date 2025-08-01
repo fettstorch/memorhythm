@@ -29,7 +29,7 @@
         >
           <span class="rank">#{{ entry.rank || 0 }}</span>
           <span class="user">{{ entry.user }}</span>
-          <span class="score">{{ formatScore(entry.score) }}</span>
+          <span class="score">{{ formatScore(entry.score, entry.round) }}</span>
         </div>
       </div>
     </div>
@@ -47,12 +47,11 @@ defineEmits<{
   close: [];
 }>();
 
-const categories: ScoreCategory[] = ['total', 'position', 'rhythm', 'round'];
+const categories: ScoreCategory[] = ['total', 'position', 'rhythm'];
 const categoryLabels = {
   total: 'Total Score',
   position: 'Position',
   rhythm: 'Rhythm',
-  round: 'Best Round',
 };
 
 const activeCategory = ref<ScoreCategory>('total');
@@ -74,11 +73,11 @@ async function fetchLeaderboard() {
   }
 }
 
-function formatScore(score: number): string {
+function formatScore(score: number, round: number): string {
   if (activeCategory.value === 'round') {
     return `Round ${score}`;
   }
-  return `${score}%`;
+  return `${score}% Round ${round}`;
 }
 
 watch(activeCategory, fetchLeaderboard);

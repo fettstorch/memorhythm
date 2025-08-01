@@ -43,6 +43,7 @@ export type ScoreCategory = 'position' | 'rhythm' | 'total' | 'round';
 export interface LeaderboardEntry {
   user: string;
   score: number;
+  round: number;
   rank?: number;
 }
 

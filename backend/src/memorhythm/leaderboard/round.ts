@@ -46,13 +46,17 @@ export default async function handler(req: any, res: any) {
       withScores: true, // Include the numeric scores, not just usernames
     })) as (string | number)[];
 
-    // Redis returns alternating username/score pairs: [user1, score1, user2, score2, ...]
-    // We need to convert this flat array into structured LeaderboardEntry objects
+    // Redis returns alternating member/score pairs: [member1, roundScore1, member2, roundScore2, ...]
+    // Members are in format "username:round:round", we need to parse this
     const entries: LeaderboardEntry[] = [];
     for (let i = 0; i < result.length; i += 2) {
+      const memberData = result[i] as string; // Format: "username:round:round"
+      const [user, roundStr1, roundStr2] = memberData.split(':');
+      
       entries.push({
-        user: result[i] as string,           // Username at even indices
-        score: Number(result[i + 1]),        // Score at odd indices (round number)
+        user,
+        score: Number(roundStr1),            // The round number (used as score)
+        round: Number(roundStr2),            // Same as score for round category
         rank: Math.floor(i / 2) + 1,         // Calculate rank based on position
       });
     }
