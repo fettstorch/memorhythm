@@ -27,9 +27,9 @@ test.describe('Precision Scoring with Deterministic Sequences', () => {
     
     // Verify we captured the expected sequence for seed 12345
     expect(circles.length).toBe(3);
-    expect(circles[0]).toEqual({x: 69, y: 504, time: 0});
-    expect(circles[1]).toEqual({x: 658, y: 348, time: 500});
-    expect(circles[2]).toEqual({x: 1210, y: 259, time: 750});
+    expect(circles[0]).toEqual({x: 92, y: 111, time: 0});
+    expect(circles[1]).toEqual({x: 643, y: 551, time: 250});
+    expect(circles[2]).toEqual({x: 1205, y: 501, time: 500});
 
     // Get canvas and click at exact coordinates with perfect timing
     const canvas = page.locator('canvas').first();
@@ -41,13 +41,13 @@ test.describe('Precision Scoring with Deterministic Sequences', () => {
     // Click circle 1 (immediately) - use force to bypass overlay
     await canvas.click({ position: { x: circles[0].x, y: circles[0].y }, force: true });
     
-    // Wait for circle 2 timing (500ms)
+    // Wait for circle 2 timing (250ms)
     const elapsed1 = Date.now() - startTime;
     const waitTime1 = Math.max(0, circles[1].time - elapsed1);
     await page.waitForTimeout(waitTime1);
     await canvas.click({ position: { x: circles[1].x, y: circles[1].y }, force: true });
     
-    // Wait for circle 3 timing (750ms)
+    // Wait for circle 3 timing (500ms)
     const elapsed2 = Date.now() - startTime;
     const waitTime2 = Math.max(0, circles[2].time - elapsed2);
     await page.waitForTimeout(waitTime2);

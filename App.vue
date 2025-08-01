@@ -21,8 +21,8 @@ import {
 } from './constants';
 import GameCanvas from './components/GameCanvas.vue';
 import UIOverlay from './components/UIOverlay.vue';
-import PlayerNameInput from './src/components/PlayerNameInput.vue';
-import LeaderboardDisplay from './src/components/LeaderboardDisplay.vue';
+import { getLeaderboard, submitScore } from './src/services/leaderboardService';
+import type { LeaderboardResponse } from './types';
 import { backgroundMusicBase64Encoded } from './sounds';
 
 const gameState = ref<GameState>(GameState.Idle);
@@ -36,15 +36,64 @@ const isMusicSetup = ref<boolean>(false);
 const isMuted = ref<boolean>(false);
 const dimensions = ref({ width: 0, height: 0 });
 const bestScores = ref({ position: 0, rhythm: 0, total: 0 });
-const showPlayerNameInput = ref(false);
-const showLeaderboard = ref(false);
 
-// Check if we're in test mode to disable leaderboard modals
+// Player name management
+const generateDefaultName = () => `user-${Math.floor(1000 + Math.random() * 9000)}`;
+const playerName = ref(generateDefaultName());
+
+// Leaderboard data
+const leaderboardData = ref<LeaderboardResponse | null>(null);
+const isLoadingLeaderboard = ref(false);
+
+// Check if we're in test mode to disable leaderboard features
 const isTestMode = new URLSearchParams(window.location.search).get('test') === 'true';
 
 const handleCanvasReady = (newDimensions: { width: number; height: number }) => {
   dimensions.value = newDimensions;
 };
+
+// Load leaderboard data
+const loadLeaderboard = async () => {
+  if (isTestMode) return; // Skip leaderboard in test mode
+  
+  isLoadingLeaderboard.value = true;
+  try {
+    leaderboardData.value = await getLeaderboard('total', 5); // Top 5 for start screen
+  } catch (error) {
+    console.error('Failed to load leaderboard:', error);
+    leaderboardData.value = null;
+  } finally {
+    isLoadingLeaderboard.value = false;
+  }
+};
+
+// Auto-submit score for failed games (NO auto-redirect - wait for player input)
+const autoSubmitScoreOnly = async (calculatedScore: Score) => {
+  if (isTestMode) {
+    // In test mode, don't submit scores but keep normal game flow
+    return;
+  }
+  
+  try {
+    // Submit the score using the current player name
+    await submitScore({
+      user: playerName.value.trim() || generateDefaultName(),
+      position: calculatedScore.position,
+      rhythm: calculatedScore.rhythm,
+      total: calculatedScore.total,
+      round: round.value,
+    });
+    
+    // Refresh leaderboard data in background
+    loadLeaderboard(); // Don't await - let it update in background
+    
+  } catch (error) {
+    console.error('Failed to submit score:', error);
+    // Continue with normal game flow even if submission fails
+  }
+};
+
+// Removed duplicate function
 
 const startNewRound = (targetRound: number) => {
   const sequenceLength = 2 + targetRound;
@@ -96,9 +145,17 @@ const handleStartGame = async () => {
 
 const handleNextRound = () => {
   const failed = score.value && (score.value.total < 50 || score.value.position < 30 || score.value.rhythm < 30);
-  const nextRound = failed ? 1 : round.value + 1;
-  round.value = nextRound;
-  startNewRound(nextRound);
+  
+  if (failed) {
+    // For failed games, return to start screen instead of immediately starting new round
+    round.value = 1;
+    gameState.value = GameState.Idle;
+  } else {
+    // For successful rounds, proceed to next round
+    const nextRound = round.value + 1;
+    round.value = nextRound;
+    startNewRound(nextRound);
+  }
 };
 
 const handleToggleMute = () => {
@@ -237,16 +294,12 @@ watch(gameState, (newGameState) => {
     const failed = calculatedScore.total < 50 || calculatedScore.position < 30 || calculatedScore.rhythm < 30;
     if (failed) {
       playSoundEffect('level-failed');
-      // Show name input for failed games too (they still completed rounds) - but not in test mode
-      if (!isTestMode) {
-        showPlayerNameInput.value = true;
-      }
+      // For failed games, auto-submit score but stay in scoring state - wait for player to click "Restart from Round 1"
+      autoSubmitScoreOnly(calculatedScore);
     } else {
       playSoundEffect('level-complete');
-      // Show name input for successful rounds - but not in test mode
-      if (!isTestMode) {
-        showPlayerNameInput.value = true;
-      }
+      // For successful rounds, auto-submit score but stay in scoring state - wait for player to click "Next Round"
+      autoSubmitScoreOnly(calculatedScore);
     }
   }
 });
@@ -255,20 +308,12 @@ const clicksRemaining = computed(() => {
   return sequence.value.length - playerClicks.value.length;
 });
 
-const handlePlayerNameSubmitted = () => {
-  showPlayerNameInput.value = false;
-};
+// No longer needed - modals removed
 
-const handleShowLeaderboard = () => {
-  // Don't show leaderboard in test mode
-  if (!isTestMode) {
-    showLeaderboard.value = true;
-  }
-};
-
-const handleHideLeaderboard = () => {
-  showLeaderboard.value = false;
-};
+// Load leaderboard data on app start
+onMounted(() => {
+  loadLeaderboard();
+});
 </script>
 
 <template>
@@ -292,25 +337,14 @@ const handleHideLeaderboard = () => {
         :clicksRemaining="clicksRemaining"
         :isMuted="isMuted"
         :isMusicSetup="isMusicSetup"
+        :playerName="playerName"
+        :leaderboardData="leaderboardData"
+        :isLoadingLeaderboard="isLoadingLeaderboard"
         @start="handleStartGame"
         @nextRound="handleNextRound"
         @toggleMute="handleToggleMute"
-        @showLeaderboard="handleShowLeaderboard"
+        @updatePlayerName="(newName) => playerName = newName"
       />
-      
-      <!-- Player Name Input Modal -->
-      <div v-if="showPlayerNameInput" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <PlayerNameInput 
-          :score="score!" 
-          :round="round"
-          @submitted="handlePlayerNameSubmitted"
-        />
-      </div>
-      
-      <!-- Leaderboard Modal -->
-      <div v-if="showLeaderboard" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <LeaderboardDisplay @close="handleHideLeaderboard" />
-      </div>
     </div>
   </div>
 </template>

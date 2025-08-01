@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { GameState, Score } from '../types';
+import { GameState, Score, LeaderboardResponse } from '../types';
 
 interface UIOverlayProps {
   gameState: GameState;
@@ -9,13 +9,16 @@ interface UIOverlayProps {
   clicksRemaining: number;
   isMuted: boolean;
   isMusicSetup: boolean;
+  playerName: string;
+  leaderboardData: LeaderboardResponse | null;
+  isLoadingLeaderboard: boolean;
 }
 
 // Check if we're in test mode to hide leaderboard button
 const isTestMode = new URLSearchParams(window.location.search).get('test') === 'true';
 
 defineProps<UIOverlayProps>();
-const emit = defineEmits(['start', 'nextRound', 'toggleMute', 'showLeaderboard']);
+const emit = defineEmits(['start', 'nextRound', 'toggleMute', 'updatePlayerName']);
 
 const VolumeUpIcon = () => (
   '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>'
@@ -58,13 +61,58 @@ const failed = (score: Score | null) => score && (score.total < 50 || score.posi
     <!-- Centered UI for major state changes -->
     <div class="w-full h-full flex items-center justify-center">
       <div class="p-4" :class="{ 'pointer-events-auto': gameState === GameState.Idle || gameState === GameState.Scoring, 'pointer-events-none': gameState !== GameState.Idle && gameState !== GameState.Scoring }">
-        <div v-if="gameState === GameState.Idle" class="text-center">
+        <div v-if="gameState === GameState.Idle" class="text-center max-w-4xl mx-auto">
           <h1 class="text-6xl font-bold mb-4 text-white drop-shadow-lg">Memorhythm</h1>
           <p class="text-xl text-gray-300 mb-8">Test your memory and sense of rhythm.</p>
-          <div class="space-y-4">
+          
+          <!-- Player Name Input -->
+          <div class="mb-8">
+            <label for="playerNameInput" class="block text-lg font-semibold text-gray-300 mb-2">Player Name:</label>
+            <input
+              id="playerNameInput"
+              :value="playerName"
+              @input="emit('updatePlayerName', ($event.target as HTMLInputElement).value)"
+              type="text"
+              maxlength="20"
+              placeholder="Enter your name"
+              class="bg-gray-800 text-white border-2 border-gray-600 rounded-lg px-4 py-2 text-center text-lg focus:border-emerald-400 focus:outline-none w-64"
+            />
+          </div>
+          
+          <!-- Start Game Button -->
+          <div class="mb-8">
             <button @click="emit('start')" class="bg-emerald-500 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg hover:bg-emerald-600 transition-transform transform hover:scale-105">Start Game</button>
-            <br>
-            <button v-if="!isTestMode" @click="emit('showLeaderboard')" class="bg-blue-500 text-white font-bold py-2 px-6 rounded-full text-lg shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105">View Leaderboard</button>
+          </div>
+          
+          <!-- Leaderboard Section -->
+          <div v-if="!isTestMode" class="bg-gray-800 bg-opacity-80 rounded-2xl p-6 backdrop-blur-sm">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4">🏆 Top Scores</h2>
+            
+            <div v-if="isLoadingLeaderboard" class="text-gray-400">
+              Loading leaderboard...
+            </div>
+            
+            <div v-else-if="!leaderboardData || !leaderboardData.entries || leaderboardData.entries.length === 0" class="text-gray-400">
+              No scores yet - be the first!
+            </div>
+            
+            <div v-else class="space-y-2">
+              <div 
+                v-for="(entry, index) in leaderboardData.entries" 
+                :key="`${entry.user}-${entry.score}-${entry.round}`"
+                class="flex justify-between items-center bg-gray-700 bg-opacity-50 rounded-lg px-4 py-2"
+                :class="{ 'border-l-4 border-yellow-400': index === 0 }"
+              >
+                <div class="flex items-center space-x-3">
+                  <span class="font-bold text-emerald-400">#{{ index + 1 }}</span>
+                  <span class="text-white font-medium">{{ entry.user }}</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-yellow-400 font-bold text-lg">{{ entry.score }}%</span>
+                  <span class="text-gray-400 text-sm ml-2">Round {{ entry.round }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div v-else-if="gameState === GameState.Playback" class="text-center">
