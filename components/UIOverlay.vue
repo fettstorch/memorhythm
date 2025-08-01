@@ -12,13 +12,14 @@ interface UIOverlayProps {
   playerName: string;
   leaderboardData: LeaderboardResponse | null;
   isLoadingLeaderboard: boolean;
+  activeLeaderboardTab: 'total' | 'position' | 'rhythm';
 }
 
 // Check if we're in test mode to hide leaderboard button
 const isTestMode = new URLSearchParams(window.location.search).get('test') === 'true';
 
 defineProps<UIOverlayProps>();
-const emit = defineEmits(['start', 'nextRound', 'toggleMute', 'updatePlayerName']);
+const emit = defineEmits(['start', 'nextRound', 'toggleMute', 'updatePlayerName', 'switchLeaderboardTab']);
 
 const VolumeUpIcon = () => (
   '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>'
@@ -30,6 +31,16 @@ const VolumeOffIcon = () => (
 
 const failed = (score: Score | null) => score && (score.total < 50 || score.position < 30 || score.rhythm < 30);
 </script>
+
+<style scoped>
+.scrollbar-hide {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  -webkit-scrollbar: none;
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
 
 <template>
   <div class="absolute inset-0 pointer-events-none">
@@ -59,15 +70,15 @@ const failed = (score: Score | null) => score && (score.total < 50 || score.posi
     </div>
 
     <!-- Centered UI for major state changes -->
-    <div class="w-full h-full flex items-center justify-center">
-      <div class="p-4" :class="{ 'pointer-events-auto': gameState === GameState.Idle || gameState === GameState.Scoring, 'pointer-events-none': gameState !== GameState.Idle && gameState !== GameState.Scoring }">
-        <div v-if="gameState === GameState.Idle" class="text-center max-w-4xl mx-auto">
-          <h1 class="text-6xl font-bold mb-4 text-white drop-shadow-lg">Memorhythm</h1>
-          <p class="text-xl text-gray-300 mb-8">Test your memory and sense of rhythm.</p>
+    <div class="w-full h-full flex items-center justify-center overflow-y-auto">
+      <div class="p-4 w-full max-h-full overflow-y-auto" :class="{ 'pointer-events-auto': gameState === GameState.Idle || gameState === GameState.Scoring, 'pointer-events-none': gameState !== GameState.Idle && gameState !== GameState.Scoring }">
+        <div v-if="gameState === GameState.Idle" class="text-center max-w-4xl mx-auto px-4 py-8">
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 text-white drop-shadow-lg">Memorhythm</h1>
+          <p class="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8">Test your memory and sense of rhythm.</p>
           
           <!-- Player Name Input -->
-          <div class="mb-8">
-            <label for="playerNameInput" class="block text-lg font-semibold text-gray-300 mb-2">Player Name:</label>
+          <div class="mb-6 sm:mb-8">
+            <label for="playerNameInput" class="block text-base sm:text-lg font-semibold text-gray-300 mb-2">Player Name:</label>
             <input
               id="playerNameInput"
               :value="playerName"
@@ -75,80 +86,107 @@ const failed = (score: Score | null) => score && (score.total < 50 || score.posi
               type="text"
               maxlength="20"
               placeholder="Enter your name"
-              class="bg-gray-800 text-white border-2 border-gray-600 rounded-lg px-4 py-2 text-center text-lg focus:border-emerald-400 focus:outline-none w-64"
+              class="bg-gray-800 text-white border-2 border-gray-600 rounded-lg px-4 py-2 text-center text-base sm:text-lg focus:border-emerald-400 focus:outline-none w-full max-w-xs mx-auto"
             />
           </div>
           
           <!-- Start Game Button -->
-          <div class="mb-8">
-            <button @click="emit('start')" class="bg-emerald-500 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg hover:bg-emerald-600 transition-transform transform hover:scale-105">Start Game</button>
+          <div class="mb-6 sm:mb-8">
+            <button @click="emit('start')" class="bg-emerald-500 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-lg sm:text-xl shadow-lg hover:bg-emerald-600 transition-transform transform hover:scale-105">Start Game</button>
           </div>
           
           <!-- Leaderboard Section -->
-          <div v-if="!isTestMode" class="bg-gray-800 bg-opacity-80 rounded-2xl p-6 backdrop-blur-sm">
-            <h2 class="text-2xl font-bold text-emerald-400 mb-4">🏆 Top Scores</h2>
+          <div v-if="!isTestMode" class="bg-gray-800 bg-opacity-80 rounded-2xl p-4 sm:p-6 backdrop-blur-sm">
+            <h2 class="text-xl sm:text-2xl font-bold text-emerald-400 mb-3 sm:mb-4">🏆 Leaderboards</h2>
             
-            <div v-if="isLoadingLeaderboard" class="text-gray-400">
-              Loading leaderboard...
+            <!-- Leaderboard Tabs -->
+            <div class="flex space-x-1 mb-4 bg-gray-700 bg-opacity-50 rounded-lg p-1">
+              <button 
+                @click="emit('switchLeaderboardTab', 'total')"
+                :class="activeLeaderboardTab === 'total' ? 'bg-emerald-500 text-white' : 'text-gray-300 hover:text-white'"
+                class="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+              >
+                Total
+              </button>
+              <button 
+                @click="emit('switchLeaderboardTab', 'position')"
+                :class="activeLeaderboardTab === 'position' ? 'bg-emerald-500 text-white' : 'text-gray-300 hover:text-white'"
+                class="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+              >
+                Position
+              </button>
+              <button 
+                @click="emit('switchLeaderboardTab', 'rhythm')"
+                :class="activeLeaderboardTab === 'rhythm' ? 'bg-emerald-500 text-white' : 'text-gray-300 hover:text-white'"
+                class="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+              >
+                Rhythm
+              </button>
             </div>
             
-            <div v-else-if="!leaderboardData || !leaderboardData.entries || leaderboardData.entries.length === 0" class="text-gray-400">
-              No scores yet - be the first!
-            </div>
-            
-            <div v-else class="space-y-2">
+            <div class="max-h-64 overflow-y-auto scrollbar-hide">
+              <div v-if="isLoadingLeaderboard" class="text-gray-400">
+                Loading leaderboard...
+              </div>
+              
+              <div v-else-if="!leaderboardData || !leaderboardData.entries || leaderboardData.entries.length === 0" class="text-gray-400">
+                No scores yet - be the first!
+              </div>
+              
+              <div v-else class="space-y-2">
               <div 
                 v-for="(entry, index) in leaderboardData.entries" 
                 :key="`${entry.user}-${entry.score}-${entry.round}`"
-                class="flex justify-between items-center bg-gray-700 bg-opacity-50 rounded-lg px-4 py-2"
+                class="flex justify-between items-center bg-gray-700 bg-opacity-50 rounded-lg px-3 sm:px-4 py-2"
                 :class="{ 'border-l-4 border-yellow-400': index === 0 }"
               >
-                <div class="flex items-center space-x-3">
-                  <span class="font-bold text-emerald-400">#{{ index + 1 }}</span>
-                  <span class="text-white font-medium">{{ entry.user }}</span>
+                <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                  <span class="font-bold text-emerald-400 text-sm sm:text-base">#{{ index + 1 }}</span>
+                  <span class="text-white font-medium text-sm sm:text-base truncate">{{ entry.user }}</span>
                 </div>
-                <div class="text-right">
-                  <span class="text-yellow-400 font-bold text-lg">{{ entry.score }}%</span>
-                  <span class="text-gray-400 text-sm ml-2">Round {{ entry.round }}</span>
+                <div class="text-right flex-shrink-0">
+                  <span class="text-yellow-400 font-bold text-base sm:text-lg">{{ entry.score }}%</span>
+                  <span class="text-gray-400 text-xs sm:text-sm ml-1 sm:ml-2 block sm:inline">Round {{ entry.round }}</span>
                 </div>
+              </div>
               </div>
             </div>
           </div>
         </div>
         <div v-else-if="gameState === GameState.Playback" class="text-center">
-          <h2 class="text-4xl font-bold text-white animate-pulse">Watch Carefully...</h2>
+          <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white animate-pulse">Watch Carefully...</h2>
         </div>
         <div v-else-if="gameState === GameState.PlayerTurn" class="text-center">
-          <h2 class="text-5xl font-bold text-emerald-400">Your Turn!</h2>
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-emerald-400">Your Turn!</h2>
         </div>
         <div v-else-if="gameState === GameState.Calculating" class="text-center">
-          <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-emerald-400 mx-auto mb-6"></div>
-          <h2 class="text-3xl font-bold text-white">Calculating...</h2>
+          <div class="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-4 border-emerald-400 mx-auto mb-4 sm:mb-6"></div>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white">Calculating...</h2>
         </div>
-        <div v-else-if="gameState === GameState.Scoring" class="flex flex-col items-center space-y-8">
-            <div v-if="score" class="bg-gray-800 bg-opacity-80 p-8 rounded-2xl shadow-2xl w-full max-w-md text-left backdrop-blur-sm">
-                <h2 class="text-4xl font-bold mb-6 text-center" :class="failed(score) ? 'text-red-400' : 'text-emerald-400'">
+        <div v-else-if="gameState === GameState.Scoring" class="flex flex-col items-center space-y-6 sm:space-y-8 px-4">
+            <div v-if="score" class="bg-gray-800 bg-opacity-80 p-4 sm:p-6 lg:p-8 rounded-2xl shadow-2xl w-full max-w-md text-left backdrop-blur-sm">
+                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-center" :class="failed(score) ? 'text-red-400' : 'text-emerald-400'">
                     {{ failed(score) ? 'Try Again' : 'Round Complete!' }}
                 </h2>
-                <div class="space-y-4">
-                    <div class="text-2xl">
+                <div class="space-y-3 sm:space-y-4">
+                    <div class="text-lg sm:text-xl lg:text-2xl">
                         <span class="text-gray-300">Position Accuracy:</span>
                         <span class="font-bold" :class="score.position >= 30 ? 'text-emerald-400' : 'text-red-400'"> {{score.position}}%</span>
                         <span class="text-gray-400"> / 30%</span>
-                        <span v-if="score.position === bestScores.position && bestScores.position > 0" class="text-yellow-400 text-sm ml-2">✨ BEST!</span>
+                        <span v-if="score.position === bestScores.position && bestScores.position > 0" class="text-yellow-400 text-xs sm:text-sm ml-2">✨ BEST!</span>
                     </div>
-                    <div class="text-2xl">
+                    <div class="text-lg sm:text-xl lg:text-2xl">
                         <span class="text-gray-300">Rhythm Accuracy:</span>
                         <span class="font-bold" :class="score.rhythm >= 30 ? 'text-emerald-400' : 'text-red-400'"> {{score.rhythm}}%</span>
                         <span class="text-gray-400"> / 30%</span>
-                        <span v-if="score.rhythm === bestScores.rhythm && bestScores.rhythm > 0" class="text-yellow-400 text-sm ml-2">✨ BEST!</span>
+                        <span v-if="score.rhythm === bestScores.rhythm && bestScores.rhythm > 0" class="text-yellow-400 text-xs sm:text-sm ml-2">✨ BEST!</span>
                     </div>
-                    <div class="border-t border-gray-600 my-4"></div>
-                    <div class="text-3xl">
+                    <div class="border-t border-gray-600 my-3 sm:my-4"></div>
+                    <div class="text-xl sm:text-2xl lg:text-3xl">
                         <span class="font-bold" :class="score.total >= 50 ? 'text-emerald-400' : 'text-red-400'">Total Score:</span>
                         <span class="font-bold" :class="score.total >= 50 ? 'text-emerald-400' : 'text-red-400'"> {{score.total}}%</span>
                         <span class="text-gray-400"> / 50%</span>
-                        <span v-if="score.total === bestScores.total && bestScores.total > 0" class="text-yellow-400 text-sm ml-2">✨ BEST!</span>
+                        <span v-if="score.total === bestScores.total && bestScores.total > 0" class="text-yellow-400 text-xs sm:text-sm ml-2">✨ BEST!</span>
                     </div>
                     
                     <!-- Session Best Scores -->
@@ -171,7 +209,7 @@ const failed = (score: Score | null) => score && (score.total < 50 || score.posi
                     </div>
                 </div>
             </div>
-            <button @click="emit('nextRound')" class="bg-emerald-500 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg hover:bg-emerald-600 transition-transform transform hover:scale-105">
+            <button @click="emit('nextRound')" class="bg-emerald-500 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-lg sm:text-xl shadow-lg hover:bg-emerald-600 transition-transform transform hover:scale-105">
                 {{ failed(score) ? 'Restart from Round 1' : 'Next Round' }}
             </button>
         </div>

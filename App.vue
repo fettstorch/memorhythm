@@ -41,9 +41,19 @@ const bestScores = ref({ position: 0, rhythm: 0, total: 0 });
 const generateDefaultName = () => `user-${Math.floor(1000 + Math.random() * 9000)}`;
 const playerName = ref(generateDefaultName());
 
-// Leaderboard data
-const leaderboardData = ref<LeaderboardResponse | null>(null);
+// Leaderboard data - cache all three types
+const leaderboardCache = ref<{
+  total: LeaderboardResponse | null;
+  position: LeaderboardResponse | null;
+  rhythm: LeaderboardResponse | null;
+}>({
+  total: null,
+  position: null,
+  rhythm: null
+});
 const isLoadingLeaderboard = ref(false);
+const activeLeaderboardTab = ref<'total' | 'position' | 'rhythm'>('total');
+let refreshInterval: NodeJS.Timer | null = null;
 
 // Check if we're in test mode to disable leaderboard features
 const isTestMode = new URLSearchParams(window.location.search).get('test') === 'true';
@@ -52,18 +62,60 @@ const handleCanvasReady = (newDimensions: { width: number; height: number }) => 
   dimensions.value = newDimensions;
 };
 
-// Load leaderboard data
-const loadLeaderboard = async () => {
+// Load all leaderboard data and cache it
+const loadAllLeaderboards = async (showLoading = false) => {
   if (isTestMode) return; // Skip leaderboard in test mode
   
-  isLoadingLeaderboard.value = true;
+  if (showLoading) {
+    isLoadingLeaderboard.value = true;
+  }
+  
   try {
-    leaderboardData.value = await getLeaderboard('total', 5); // Top 5 for start screen
+    // Load all three leaderboard types in parallel
+    const [totalData, positionData, rhythmData] = await Promise.all([
+      getLeaderboard('total', 20),
+      getLeaderboard('position', 20),
+      getLeaderboard('rhythm', 20)
+    ]);
+    
+    leaderboardCache.value = {
+      total: totalData,
+      position: positionData,
+      rhythm: rhythmData
+    };
   } catch (error) {
-    console.error('Failed to load leaderboard:', error);
-    leaderboardData.value = null;
+    console.error('Failed to load leaderboards:', error);
   } finally {
-    isLoadingLeaderboard.value = false;
+    if (showLoading) {
+      isLoadingLeaderboard.value = false;
+    }
+  }
+};
+
+// Switch leaderboard tab (no loading needed - use cached data)
+const switchLeaderboardTab = (category: 'total' | 'position' | 'rhythm') => {
+  activeLeaderboardTab.value = category;
+};
+
+// Get current leaderboard data from cache
+const currentLeaderboardData = computed(() => {
+  return leaderboardCache.value[activeLeaderboardTab.value];
+});
+
+// Start periodic refresh of leaderboard data
+const startLeaderboardRefresh = () => {
+  if (isTestMode || refreshInterval) return;
+  
+  refreshInterval = setInterval(() => {
+    loadAllLeaderboards();
+  }, 10000); // Refresh every 10 seconds
+};
+
+// Stop periodic refresh
+const stopLeaderboardRefresh = () => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+    refreshInterval = null;
   }
 };
 
@@ -85,7 +137,7 @@ const autoSubmitScoreOnly = async (calculatedScore: Score) => {
     });
     
     // Refresh leaderboard data in background
-    loadLeaderboard(); // Don't await - let it update in background
+    loadAllLeaderboards(); // Don't await - let it update in background
     
   } catch (error) {
     console.error('Failed to submit score:', error);
@@ -310,9 +362,15 @@ const clicksRemaining = computed(() => {
 
 // No longer needed - modals removed
 
-// Load leaderboard data on app start
+// Load leaderboard data on app start and start periodic refresh
 onMounted(() => {
-  loadLeaderboard();
+  loadAllLeaderboards(true); // Show loading only on initial load
+  startLeaderboardRefresh();
+});
+
+// Clean up interval on unmount
+onUnmounted(() => {
+  stopLeaderboardRefresh();
 });
 </script>
 
@@ -338,12 +396,14 @@ onMounted(() => {
         :isMuted="isMuted"
         :isMusicSetup="isMusicSetup"
         :playerName="playerName"
-        :leaderboardData="leaderboardData"
+        :leaderboardData="currentLeaderboardData"
         :isLoadingLeaderboard="isLoadingLeaderboard"
+        :activeLeaderboardTab="activeLeaderboardTab"
         @start="handleStartGame"
         @nextRound="handleNextRound"
         @toggleMute="handleToggleMute"
         @updatePlayerName="(newName) => playerName = newName"
+        @switchLeaderboardTab="switchLeaderboardTab"
       />
     </div>
   </div>

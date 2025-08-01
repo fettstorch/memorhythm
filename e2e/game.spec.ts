@@ -23,9 +23,9 @@ test.describe('Memorhythm Game', () => {
     // Click start game
     await page.click('button:has-text("Start Game")');
     
-    // Should show round 1 (it's displayed as a number in the HUD)
-    await expect(page.locator('text=Round')).toBeVisible();
-    await expect(page.locator('div:has-text("1")').last()).toBeVisible();
+    // Should show round 1 (it's displayed in the top-right HUD, not in leaderboard)
+    await expect(page.locator('.absolute.top-5.right-5').locator('text=Round')).toBeVisible();
+    await expect(page.locator('.absolute.top-5.right-5').locator('text=1')).toBeVisible();
     
     // Should show mute button (it's a button with SVG icon, not text)
     await expect(page.locator('button[aria-label*="Mute"]')).toBeVisible();
